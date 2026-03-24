@@ -7,6 +7,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import mygame.main.GamePanel;
+import java.awt.BasicStroke;
+import java.awt.AlphaComposite;
+import java.awt.RenderingHints;
 
 public class Chicken extends Entity {
     
@@ -16,8 +19,9 @@ public class Chicken extends Entity {
     private boolean hpBarOn = false;
     private int hpBarCounter = 0;
     //bộ đếm tgian hồi sinh
-    private int defaultX, defaultY;
+    public int defaultX, defaultY;
     public int respawnCounter = 0;
+    public int shrinkCounter = 0; // Bộ đếm hiệu ứng thu nhỏ vòng tròn sau khi hồi sinh
 
     // --- AI DI CHUYỂN & NÉ VẬT CẢN ---
     private int stuckCooldown = 0;
@@ -184,45 +188,6 @@ public class Chicken extends Entity {
             }
         }
     }
-
-    @Override
-    public void draw(Graphics2D g2) {
-        BufferedImage image = null;
-
-        if (!attacking) {
-            image = up1; 
-        } else {
-            switch (direction) {
-                case "up": image = (spriteNum == 1) ? up1_egg : up2_egg; break;
-                case "down": image = (spriteNum == 1) ? down1_egg : down2_egg; break;
-                case "left": image = (spriteNum == 1) ? left1_egg : left2_egg; break;
-                case "right": image = (spriteNum == 1) ? right1_egg : right2_egg; break;
-            }
-        }
-
-        // --- HIỆU ỨNG NHẤP NHÁY ---
-        // Nếu đang trong trạng thái bất tử, cứ mỗi 10 frame sẽ ẩn ảnh trong 5 frame
-        if (invincible && invincibleCounter % 10 < 5) {
-            // Không vẽ gì (tạo khoảng trống nhấp nháy)
-        } else {
-            if (image != null) {
-                g2.drawImage(image, x, y, gp.tileSize, gp.tileSize, null);
-            }
-        }
-
-        // --- THANH MÁU ---
-        if (hpBarOn && alive) {
-            double oneScale = (double) gp.tileSize / maxLife;
-            double hpBarValue = oneScale * life;
-            g2.setColor(new Color(35, 35, 35));
-            g2.fillRect(x - 1, y - 11, gp.tileSize + 2, 10);
-            g2.setColor(new Color(255, 0, 30));
-            g2.fillRect(x, y - 10, (int) hpBarValue, 8);
-            
-            hpBarCounter++;
-            if (hpBarCounter > 300) hpBarOn = false;
-        }
-    }
     public void respawn() {
         this.x = defaultX;
         this.y = defaultY;
@@ -232,6 +197,85 @@ public class Chicken extends Entity {
         this.attacking = false;
         this.respawnCounter = 0;
         System.out.println("Ga da hoi sinh tai: " + x + ", " + y);
+        this.shrinkCounter = 20; // Bắt đầu hiệu ứng thu nhỏ trong 20 khung hình
     }
-    
+
+    @Override
+    public void draw(Graphics2D g2) {
+        // 1. Vẽ vòng tròn ma thuật nếu đang chờ hồi sinh (2 giây cuối)
+        if ((!alive && respawnCounter > 180) || (alive && shrinkCounter > 0)) {
+            drawMagicCircle(g2);
+        }
+        //2. Vẽ con gà nếu còn sống
+        if (alive) {
+            BufferedImage image = null;
+            if (!attacking) image = up1; 
+            else {
+                switch (direction) {
+                    case "up": image = (spriteNum == 1) ? up1_egg : up2_egg; break;
+                    case "down": image = (spriteNum == 1) ? down1_egg : down2_egg; break;
+                    case "left": image = (spriteNum == 1) ? left1_egg : left2_egg; break;
+                    case "right": image = (spriteNum == 1) ? right1_egg : right2_egg; break;
+                }
+            }
+
+            if (!(invincible && invincibleCounter % 10 < 5)) {
+                if (image != null) {
+                    g2.drawImage(image, x, y, gp.tileSize, gp.tileSize, null);
+                }
+            }
+            if (shrinkCounter > 0) shrinkCounter--; // Giảm dần bộ đếm thu nhỏ
+
+            // 3. Vẽ thanh máu
+            if (hpBarOn) {
+                drawHPBar(g2);
+            }
+        }
+    }
+    private void drawHPBar(Graphics2D g2) {
+        double oneScale = (double) gp.tileSize / maxLife;
+        double hpBarValue = oneScale * life;
+        g2.setColor(new Color(35, 35, 35));
+        g2.fillRect(x - 1, y - 11, gp.tileSize + 2, 10);
+        g2.setColor(new Color(255, 0, 30));
+        g2.fillRect(x, y - 10, (int) hpBarValue, 8);
+        
+        hpBarCounter++;
+        if (hpBarCounter > 300) hpBarOn = false;
+    }
+    private void drawMagicCircle(Graphics2D g2) {
+        float alpha;
+        int currentRadius;
+        int baseRadius = 30;
+        //1.khử răng cưa để vòng mượt
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        // 2. Tính toán độ trong suốt (Alpha) tăng dần khi sắp hồi sinh
+        if (!alive) {
+            // Hiệu ứng hiện dần khi đang chờ hồi sinh
+            alpha = Math.min(1f, (respawnCounter - 180) / 120f);
+            currentRadius = baseRadius;
+        }
+        else {
+            // Hiệu ứng thu nhỏ và mờ dần sau khi đã hồi sinh
+            alpha = shrinkCounter / 20f; 
+            currentRadius = (int) (baseRadius * (shrinkCounter / 20f));
+        }
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        // 3. HIỆU ỨNG ĐỔI MÀU LIÊN TỤC (Rainbow effect)
+        // Biến hue chạy từ 0 đến 1 dựa trên respawnCounter để đổi màu cầu vồng
+        float hue = (respawnCounter % 100) / 100f; 
+        g2.setColor(Color.getHSBColor(hue, 0.8f, 1.0f));
+        // 4. CHỈNH NÉT VẼ TO HƠN
+        // Thay số 4f bằng số lớn hơn nếu bạn muốn nét đậm hơn nữa
+        g2.setStroke(new BasicStroke(3f));
+        // 5. Tọa độ và kích thước
+        int centerX = defaultX + gp.tileSize / 2;
+        int centerY = defaultY + gp.tileSize - 5;
+        int radius = 20;//có thể tăng bán kính
+        // 6. Vẽ vòng tròn ma thuật (hình Oval dẹt tạo cảm giác 3D dưới chân)
+         g2.drawOval(centerX - radius, centerY - 10, radius * 2, 20);
+       // 7. Reset lại các thiết lập đồ họa để không ảnh hưởng đến các hình vẽ khác
+        g2.drawOval(centerX - radius, centerY - 10, radius * 2, 20);
+        g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+    }
 } 

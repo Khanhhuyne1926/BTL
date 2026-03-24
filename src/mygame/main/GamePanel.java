@@ -149,7 +149,7 @@ public class GamePanel extends JPanel implements Runnable {
             return;
         }
 
-        // 2. Cập nhật Player
+        // 2. Cập nhật Player và ktra nhặt vật phẩm
         if (player != null) {
             player.update();
             tileM.checkItemCollisions(player.getBounds());
@@ -169,6 +169,12 @@ public class GamePanel extends JPanel implements Runnable {
                 } else {
                     if (monster[i] instanceof Chicken) {
                         Chicken c = (Chicken) monster[i];
+                        // Khi vừa mới chết (counter = 0), đưa tọa độ về vị trí gốc ngay
+                        // để vòng tròn ma thuật hiện đúng chỗ hồi sinh
+                        if (c.respawnCounter == 0) {
+                            c.x = c.defaultX;
+                            c.y = c.defaultY;
+                        }
                         c.respawnCounter++; 
 
                         if (c.respawnCounter >= 300) { // 5 giây (60 FPS * 5)
@@ -183,7 +189,7 @@ public class GamePanel extends JPanel implements Runnable {
         if (player != null && player.health <= 0) {
             player.triggerGameOver();
         }
-        
+        //5.cập nhật hiệu ứng của map nếu có
         tileM.update();
     }
 
