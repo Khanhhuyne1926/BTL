@@ -15,6 +15,9 @@ public class Chicken extends Entity {
     // --- Hệ thống HP & Trạng thái ---
     private boolean hpBarOn = false;
     private int hpBarCounter = 0;
+    //bộ đếm tgian hồi sinh
+    private int defaultX, defaultY;
+    public int respawnCounter = 0;
 
     // --- AI DI CHUYỂN & NÉ VẬT CẢN ---
     private int stuckCooldown = 0;
@@ -30,6 +33,8 @@ public class Chicken extends Entity {
         this.gp = gp;
         this.x = startX;
         this.y = startY;
+        this.defaultX = startX; // Lưu vị trí X gốc
+        this.defaultY = startY; // Lưu vị trí Y gốc
         this.speed = 1;
         this.direction = "down";
         
@@ -175,6 +180,7 @@ public class Chicken extends Entity {
             if (life <= 0) {
                 life = 0;
                 alive = false; 
+                hpBarOn = false;
             }
         }
     }
@@ -205,7 +211,7 @@ public class Chicken extends Entity {
         }
 
         // --- THANH MÁU ---
-        if (hpBarOn) {
+        if (hpBarOn && alive) {
             double oneScale = (double) gp.tileSize / maxLife;
             double hpBarValue = oneScale * life;
             g2.setColor(new Color(35, 35, 35));
@@ -217,4 +223,15 @@ public class Chicken extends Entity {
             if (hpBarCounter > 300) hpBarOn = false;
         }
     }
+    public void respawn() {
+        this.x = defaultX;
+        this.y = defaultY;
+        this.life = maxLife;
+        this.alive = true;
+        this.invincible = false;
+        this.attacking = false;
+        this.respawnCounter = 0;
+        System.out.println("Ga da hoi sinh tai: " + x + ", " + y);
+    }
+    
 } 

@@ -86,18 +86,26 @@ public class GamePanel extends JPanel implements Runnable {
             monster[i] = null;
         }
         // Đặt gà tại các vị trí bạn muốn
-        //gần trứng
-        monster[0] = new Chicken(this, 64 * 2, 64 * 2);
-        //góc trên bên phải
-        monster[1] = new Chicken(this, 64 * 13, 64 * 2);
-        //trung tâm
-        monster[2] = new Chicken(this, 64 * 8, 64 * 6);
-        
-        monster[3] = new Chicken(this, 64 * 9, 64 * 8);
-        //góc dưới bên phải
-        monster[4] = new Chicken(this, 64 * 13, 64 * 10);
-        //bí ngô
-        monster[5] = new Chicken(this, 64*6 , 64 * 2);
+        //Sang PHẢI: Tăng giá trị X 
+        //Sang TRÁI: Giảm giá trị X 
+        //Đi XUỐNG: Tăng giá trị Y
+        //Đi LÊN: Giảm giá trị Y 
+        //Khu vực gần Trứng (Góc trên bên trái)
+        monster[0] = new Chicken(this, 192, 128); //ok
+        //khu vực dưới trứng
+        monster[1] = new Chicken(this, 64, 304);
+        //Góc trên bên phải (Gần bụi cây hoa hướng dương)
+        monster[2] = new Chicken(this, 896, 192);//ok
+        //Lối đi phía trên (Giữa bản đồ)
+        monster[3] = new Chicken(this, 480, 64);//ok
+        //Khu vực trung tâm (Bãi cỏ trống)
+        monster[4] = new Chicken(this, 512, 384);//ok
+        //Lối đi bên phải (Phía dưới)
+        monster[5] = new Chicken(this, 896, 640);//ok
+        //Khu vực gần Ngôi nhà (Dưới cùng bên trái)
+        monster[6] = new Chicken(this, 448, 608);//ok
+        // Lối đi lắt léo (trong bụi cây hoa phía dưới)
+         monster[7] = new Chicken(this, 624, 544);//ok
         
     }
 
@@ -147,7 +155,7 @@ public class GamePanel extends JPanel implements Runnable {
             tileM.checkItemCollisions(player.getBounds());
         }
 
-        // 3. Cập nhật Gà & Xử lý va chạm gây sát thương
+        // 3. Cập nhật Gà & Xử lý va chạm gây sát thương/hồi sinh
         for (int i = 0; i < monster.length; i++) {
             if (monster[i] != null) {
                 if (monster[i].alive) {
@@ -159,7 +167,14 @@ public class GamePanel extends JPanel implements Runnable {
                         player.takeDamage(10); // Trừ 10 máu và kích hoạt nhấp nháy
                     }
                 } else {
-                    monster[i] = null; // Gà chết thì biến mất
+                    if (monster[i] instanceof Chicken) {
+                        Chicken c = (Chicken) monster[i];
+                        c.respawnCounter++; 
+
+                        if (c.respawnCounter >= 300) { // 5 giây (60 FPS * 5)
+                            c.respawn();
+                        }
+                    }
                 }
             }
         }
