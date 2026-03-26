@@ -61,6 +61,7 @@ public class Player extends Entity {
         hasWeapon = false;
         attacking = false;
         health = 100;
+        alive = true; // thêm
         invincible = false;
         invincibleCounter = 0;
         gameOverShown = false;

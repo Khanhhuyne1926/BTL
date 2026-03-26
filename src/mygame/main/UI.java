@@ -5,6 +5,9 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.io.InputStream;
+import java.awt.GradientPaint;
+import java.awt.RenderingHints;
+import java.awt.BasicStroke;
 
 public class UI {
 
@@ -111,36 +114,83 @@ public class UI {
         g2.setColor(gp.player.hasEgg ? new Color(255, 230, 90) : Color.LIGHT_GRAY);
         g2.drawString(eggText, panelX + 10, panelY + 48);
     }
+    //SỬA
     private void drawLevel1WinScreen(Graphics2D g2) {
+        // 1. Vẽ nền tối làm mờ màn hình game (Toàn màn hình)
         g2.setColor(new Color(0, 0, 0, 180));
         g2.fillRect(0, 0, gp.screenWidth, gp.screenHeight);
 
-        g2.setFont(loadFont(34f));
+        // 2. Định nghĩa vị trí và kích thước KHUNG CHIẾN THẮNG (Tương tự JDialog)
+        int frameW = 420; // Chiều rộng khung
+        int frameH = 250; // Chiều cao khung (tăng một chút để chứa 3 dòng chữ)
+        int frameX = (gp.screenWidth - frameW) / 2; // Căn giữa X
+        int frameY = (gp.screenHeight - frameH) / 2; // Căn giữa Y
+
+        // 3. Vẽ THÂN KHUNG (Màu Gradient gỗ nâu tương tự GameOverDialog)
+        // Dùng Gradient để tạo độ sâu cho khung gỗ
+        Color topColor = new Color(85, 55, 25);
+        Color bottomColor = new Color(45, 28, 12);
+        GradientPaint gpPaint = new GradientPaint(frameX, frameY, topColor, frameX, frameY + frameH, bottomColor);
+        g2.setPaint(gpPaint);
+        g2.fillRoundRect(frameX, frameY, frameW, frameH, 30, 30); // Bo góc 30px
+
+        // 4. Vẽ VIỀN KHUNG (Màu vàng đậm, nét dày)
+        g2.setColor(new Color(150, 120, 70)); // Vàng đồng đậm
+        g2.setStroke(new java.awt.BasicStroke(4)); // Viền dày 4px
+        g2.drawRoundRect(frameX, frameY, frameW, frameH, 30, 30); // Bo góc 30px
+
+        // === VẼ NỘI DUNG VĂN BẢN VÀO TRONG KHUNG ===
+        // (Sử dụng Font Arial để tránh lỗi dấu tiếng Việt như bạn gặp ở lần trước)
+        int centerY = frameY + 25; // Bắt đầu vẽ từ đây
+
+        // Dòng 1: CHIẾN THẮNG VANG DỘI! (To, Bold, Màu Vàng)
+        g2.setFont(new Font("Arial", Font.BOLD, 28));
         g2.setColor(new Color(255, 230, 90));
-        String title = "LEVEL 1 COMPLETE!";
-        int titleX = gp.screenWidth / 2 - g2.getFontMetrics().stringWidth(title) / 2;
-        g2.drawString(title, titleX, 220);
+        String title = "CHIẾN THẮNG VANG DỘI!";
+        int titleX = frameX + (frameW - g2.getFontMetrics().stringWidth(title)) / 2;
+        g2.drawString(title, titleX, centerY += 35); // Y = 60
 
-        g2.setFont(loadFont(18f));
+        // Dòng 2: Mô tả (Màu Trắng, cỡ vừa)
+        g2.setFont(new Font("Arial", Font.PLAIN, 18));
         g2.setColor(Color.WHITE);
-        String sub = "Ban da chien thang level 1";
-        int subX = gp.screenWidth / 2 - g2.getFontMetrics().stringWidth(sub) / 2;
-        g2.drawString(sub, subX, 280);
+        String sub1 = "Lũ gà đã bất lực nhìn " + gp.player.name + " mang trứng đi!";
+        int sub1X = frameX + (frameW - g2.getFontMetrics().stringWidth(sub1)) / 2;
+        g2.drawString(sub1, sub1X, centerY += 45); // Y = 105
 
+        // Dòng 3: Thách thức (In nghiêng, màu Cam nhạt)
+        g2.setFont(new Font("Arial", Font.ITALIC, 16));
+        g2.setColor(new Color(255, 180, 100));
+        String sub2 = "Thử thách thực sự đang chờ đợi bạn ở phía trước...";
+        int sub2X = frameX + (frameW - g2.getFontMetrics().stringWidth(sub2)) / 2;
+        g2.drawString(sub2, sub2X, centerY += 35); // Y = 140
+
+        // === VẼ NÚT BẤM VÀO TRONG KHUNG ===
+        // Cập nhật vị trí nút bấm (nextLevelBtn) để nằm bên trong khung
+        int btnW = 140; // Nút to hơn một chút
+        int btnH = 45;
+        int btnX = frameX + (frameW - btnW) / 2; // Căn giữa nút trong khung
+        int btnY = frameY + frameH - btnH - 25; // Nằm cách đáy khung 25px
+
+        // Cập nhật Bounds cho nút (để MouseHandler nhận diện click)
+        nextLevelBtn.setBounds(btnX, btnY, btnW, btnH);
+
+        // Vẽ nút bấm
         boolean hover = nextLevelBtn.contains(gp.mouseH.mouseX, gp.mouseH.mouseY);
-
         g2.setColor(hover ? new Color(255, 210, 90) : new Color(255, 180, 50));
-        g2.fillRoundRect(nextLevelBtn.x, nextLevelBtn.y, nextLevelBtn.width, nextLevelBtn.height, 25, 25);
+        g2.fillRoundRect(nextLevelBtn.x, nextLevelBtn.y, nextLevelBtn.width, nextLevelBtn.height, 20, 20); // Bo góc nút
 
-        g2.setColor(Color.BLACK);
-        g2.drawRoundRect(nextLevelBtn.x, nextLevelBtn.y, nextLevelBtn.width, nextLevelBtn.height, 25, 25);
+        g2.setColor(new Color(50, 30, 0)); // Màu viền nút
+        g2.setStroke(new java.awt.BasicStroke(2)); // Viền dày 2px
+        g2.drawRoundRect(nextLevelBtn.x, nextLevelBtn.y, nextLevelBtn.width, nextLevelBtn.height, 20, 20);
 
-        g2.setFont(loadFont(22f));
-        String btnText = "NEXT LEVEL";
-        int btnTextX = nextLevelBtn.x + nextLevelBtn.width / 2 - g2.getFontMetrics().stringWidth(btnText) / 2;
-        int btnTextY = nextLevelBtn.y + 48;
-        g2.drawString(btnText, btnTextX, btnTextY);
+        // Chữ trên nút
+        g2.setFont(new Font("Arial", Font.BOLD, 20));
+        g2.setColor(new Color(50, 30, 0)); // Màu chữ đậm
+        String btnText = "NEXT LEVEL"; // Tiếng Việt có dấu hơi chật, dùng không dấu cho sạch
+        int btnTextX = nextLevelBtn.x + (nextLevelBtn.width - g2.getFontMetrics().stringWidth(btnText)) / 2;
+        g2.drawString(btnText, btnTextX, nextLevelBtn.y + 30);
     }
+ 
 
     private void drawLevelCompleteScreen(Graphics2D g2) {
         // nền tối

@@ -70,6 +70,7 @@ public class Main {
     }
 
     public void startGame(String playerName) {
+        gamePanel.stopGameThread(); // Thêm 
         gamePanel.setPlayerName(playerName);
         gamePanel.setupGame();
         cardLayout.show(container, "game");

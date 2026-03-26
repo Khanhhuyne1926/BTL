@@ -85,6 +85,7 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void setupGame() {
+        gameState = STATE_PLAY; // thêm
         tileM.resetMapObjects();
 
         if (player != null) {
@@ -102,6 +103,7 @@ public class GamePanel extends JPanel implements Runnable {
 
         eggSound.setFile("/res/audio/egg.wav");
         tileM.resetMapObjects();
+        
     }
 
     public void playMenuMusic() {
@@ -178,7 +180,11 @@ public class GamePanel extends JPanel implements Runnable {
 
     public void startGameThread() {
         stopMenuMusic();
-
+        //THÊM
+        // thêm Đảm bảo thread cũ đã dừng trước khi tạo mới
+        if (gameThread != null) {
+            gameThread = null; 
+        }
         if (gameThread == null || !gameThread.isAlive()) {
             gameThread = new Thread(this);
             gameThread.start();
