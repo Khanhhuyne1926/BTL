@@ -31,6 +31,7 @@ public class TileManager {
     public Rectangle houseRect;
 
     private int animationCounter = 0;
+    public String currentMapPath = "src/res/maps/map_level1.tmx";
 
     public TileManager(GamePanel gp) {
         this.gp = gp;
@@ -52,7 +53,7 @@ public class TileManager {
             if (is != null) {
                 image = ImageIO.read(is);
             } else {
-                System.out.println("Lỗi: Khong tim thay file tai " + path);
+                System.out.println("Lỗi: Không tìm thấy file tại " + path);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,7 +70,7 @@ public class TileManager {
         houseRect = null;
         eggCollected = false;
         weaponCollected = false;
-        loadTiledXML("src/res/maps/map_level1.tmx");
+        loadTiledXML(currentMapPath);
     }
 
     public void update() {
@@ -111,8 +112,9 @@ public class TileManager {
             eggCollected = true;
             gp.player.hasEgg = true; 
             // Không gán eggRect = null ngay lập tức nếu bạn muốn giữ tọa độ, 
-            // nhưng ở đây ta dùng flag eggCollected để ẩn nó đi là được.
-            System.out.println("Ban da nhat duoc Trung! Vu khi da xuat hien.");
+            // nhưng ở đây ta dùng flag eggCollected để ẩn nó đi là được
+             gp.eggSound.play(); // 🔊 THÊM DÒNG NÀY
+            System.out.println("Bạn đã nhặt được Trứng! Vũ khí đã xuất hiện.");
         }
 
         // Xử lý nhặt Vũ khí
@@ -121,7 +123,7 @@ public class TileManager {
             weaponCollected = true;
             gp.player.hasWeapon = true; 
             weaponRect = null; 
-            System.out.println("Ban da nhat duoc Vu khi! (Player03 da kich hoat)");
+            System.out.println("Bạn đã nhặt được Vũ khí! (Player03 đã kích hoạt)");
         }
     }
 
@@ -163,7 +165,20 @@ public class TileManager {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Loi doc XML Tiled: " + e.getMessage());
+            System.out.println("Lỗi đọc XML Tiled: " + e.getMessage());
         }
+    }
+    public void loadLevelMap(int level) {
+        if (level == 1) {
+            currentMapPath = "src/res/maps/map_level1.tmx";
+            mazeBackground = setupImage("/res/maps/map_level1.png");
+            foregroundImage = setupImage("/res/maps/map_foreground_level1.png");
+        } else if (level == 2) {
+            currentMapPath = "src/res/maps/map_level2.tmx";
+            mazeBackground = setupImage("/res/maps/map_level2.png");
+            foregroundImage = setupImage("/res/maps/map_foreground_level2.png");
+        }
+
+        resetMapObjects();
     }
 }

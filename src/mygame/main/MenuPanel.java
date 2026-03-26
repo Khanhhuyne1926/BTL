@@ -1,3 +1,4 @@
+
 package mygame.main;
 
 import javax.swing.*;
@@ -58,7 +59,7 @@ public class MenuPanel extends JPanel {
             GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
             ge.registerFont(buttonFont);
         } catch (Exception e) {
-            System.err.println("Khang load duoc font, dung font mac dinh.");
+            System.err.println("Khong load duoc font, dùng font mặc định.");
             buttonFont = new Font("Arial", Font.BOLD, 26);
         }
     }
