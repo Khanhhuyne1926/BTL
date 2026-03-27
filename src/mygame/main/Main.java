@@ -1,5 +1,3 @@
-
-
 package mygame.main;
 
 import javax.swing.*;
@@ -30,7 +28,7 @@ public class Main {
             );
             window.setIconImage(logoIcon.getImage());
         } catch (Exception e) {
-            System.err.println("Khong the tai logo");
+            System.err.println("Không thể tải logo");
             e.printStackTrace();
         }
 
@@ -52,31 +50,25 @@ public class Main {
     }
 
     public void showMenu() {
-
-        // 🔥 TẮT TOÀN BỘ ÂM THANH GAME
-        gamePanel.stopAllSounds();
-
-        // dừng game loop
-        gamePanel.stopGameThread();
-        gamePanel.stopAllSounds();
-        // chuyển về menu
+        // Chỉ chuyển về menu để giữ lại progress đang chơi dở.
+        // KHÔNG reset game và KHÔNG dừng game thread ở đây.
         cardLayout.show(container, "menu");
-
         menuPanel.requestFocusInWindow();
         menuPanel.playMenuMusic();
-        if (gamePanel != null) {
-            gamePanel.startNewGame();  // Gọi để reset lại game
-        }   
+    }
+
+    public void showGame() {
+        cardLayout.show(container, "game");
+        gamePanel.requestFocusInWindow();
     }
 
     public void startGame(String playerName) {
-        gamePanel.stopGameThread(); // Thêm 
         gamePanel.setPlayerName(playerName);
-        gamePanel.setupGame();
+        gamePanel.startNewGame();
         cardLayout.show(container, "game");
         gamePanel.requestFocusInWindow();
         gamePanel.startGameThread();
-}
+    }
 
     public static void main(String[] args) {
         new Main();
