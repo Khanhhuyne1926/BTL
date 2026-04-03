@@ -14,6 +14,7 @@ import java.awt.RenderingHints;
 public class Chicken extends Entity {
 
     GamePanel gp;
+    private int attackCounter = 0; // Bộ đếm thời gian giữa các lần mổ
     
 // --- Hệ thống HP & Trạng thái ---
     private boolean hpBarOn = false;
@@ -28,7 +29,6 @@ public class Chicken extends Entity {
     private String lastBlockedDirection = "";
     private int avoidTimer = 0;
     private String avoidDirection = null;
-    
     // Ảnh animation
     public BufferedImage up1_egg, up2_egg, down1_egg, down2_egg, left1_egg, left2_egg, right1_egg, right2_egg;
 
@@ -61,6 +61,7 @@ public class Chicken extends Entity {
             left1 = up1;
             right1 = up1;
 
+            angry = setup("/res/tiles/chicken_gian.png");
              // Ảnh trạng thái đuổi theo (Angry)
             up1_egg = setup("/res/tiles/chicken_up1.png");
             up2_egg = setup("/res/tiles/chicken_up2.png");
@@ -71,7 +72,7 @@ public class Chicken extends Entity {
             right1_egg = setup("/res/tiles/chicken_right1.png");
             right2_egg = setup("/res/tiles/chicken_right2.png");
         } catch (IOException e) {
-            System.out.println("Lỗi tải ảnh gà!");
+            System.out.println("Loi tai anh ga!");
         }
     }
 
@@ -79,9 +80,9 @@ public class Chicken extends Entity {
         return ImageIO.read(getClass().getResourceAsStream(path));
     }
 
-    @Override
+@Override
     public void update() {
-        // 1. Xử lý thời gian bất tử và nhấp nháy
+        // 1. Xử lý thời gian bất tử và nhấp nháy của con gà khi bị trúng đòn
         if (invincible) {
             invincibleCounter++;
             if (invincibleCounter > 40) {
@@ -91,21 +92,48 @@ public class Chicken extends Entity {
         }
 
         if (stuckCooldown > 0) stuckCooldown--;
+
         // 2. Tính khoảng cách đến Player
         int diffX = (gp.player.x + gp.tileSize / 2) - (this.x + gp.tileSize / 2);
         int diffY = (gp.player.y + gp.tileSize / 2) - (this.y + gp.tileSize / 2);
         double distance = Math.sqrt(diffX * diffX + diffY * diffY);
 
-          // 3. AI đuổi theo khi Player có trứng
-        if (gp.player.hasEgg && distance < 350) {
+        // 3. AI: Đuổi theo và Tấn công khi Player cầm trứng
+        if (gp.player.hasEgg && distance < 250) { // Tăng tầm nhìn lên 400 cho hung hãn
             attacking = true;
             moveTowardPlayer(diffX, diffY);
+
+            // --- CƠ CHẾ TỰ ĐỘNG TẤN CÔNG (MỔ) ---
+            // Nếu khoảng cách nhỏ hơn hoặc bằng 1 Tile (đã áp sát)
+            if (distance <= gp.tileSize) {
+                if (!invincible) {
+                    attackCounter++; // Tăng bộ đếm nạp đạn mổ
+
+                    // Sau mỗi 60 frame (khoảng 1 giây) thì mổ 1 lần
+                    if (attackCounter >= 60) {
+                        // Gọi hàm nhận sát thương của Player
+                        // Lưu ý: Đảm bảo bên Player.java đã có hàm takeDamage(int)
+                        gp.player.takeDamage(10); 
+
+                        System.out.println("Ga da chu dong mo Player!");
+                        attackCounter = 0; // Reset để chờ lần mổ tiếp theo
+                    }
+                } else {
+                // Nếu đang bị đánh, reset luôn counter để gà không "tích tụ" sát thương
+                attackCounter = 0; 
+                }
+            } else {
+                attackCounter = 0; // Reset nếu Player chạy thoát ra xa
+            }
         } else {
+            // Nếu Player không cầm trứng hoặc ở quá xa: Gà đứng yên (Ngủ)
             attacking = false;
+            attackCounter = 0;
             spriteNum = 1;
             return;
         }
-        // 4. Animation chân chạy
+
+        // 4. Animation chân chạy khi đang đuổi theo
         spriteCounter++;
         if (spriteCounter > 10) {
             spriteNum = (spriteNum == 1) ? 2 : 1;
@@ -131,7 +159,7 @@ public class Chicken extends Entity {
             primaryDir = (diffY > 0) ? "down" : "up";
             secondaryDir = (diffX > 0) ? "right" : "left";
         }
-        // Thử hướng chính, nếu kẹt (tường hoặc gà khác) thì thử hướng phụ
+// Thử hướng chính, nếu kẹt (tường hoặc gà khác) thì thử hướng phụ
         if (!tryMove(primaryDir)) {
             if (tryMove(secondaryDir)) {
                 avoidDirection = secondaryDir;
@@ -196,7 +224,14 @@ public class Chicken extends Entity {
             // Kích hoạt nhấp nháy (Không đẩy lùi)
             invincible = true;
             invincibleCounter = 0;
-
+            
+            // THÊM LOGIC ĐẨY LÙI (Knockback)
+            // Dựa vào hướng của Player để đẩy gà đi ngược lại
+            if (gp.player.direction.equals("up")) y -= 10;
+            if (gp.player.direction.equals("down")) y += 10;
+            if (gp.player.direction.equals("left")) x -= 10;
+            if (gp.player.direction.equals("right")) x += 10;
+            
             if (life <= 0) {
                 life = 0;
                 alive = false;
@@ -213,38 +248,57 @@ public class Chicken extends Entity {
         this.invincible = false;
         this.attacking = false;
         this.respawnCounter = 0;
-        System.out.println("Ga da hoi sinh tai: " + x + ", " + y);
         this.shrinkCounter = 20;
+        System.out.println("Ga da hoi sinh tai: " + x + ", " + y);
+        
     }
 
-    @Override
+@Override
     public void draw(Graphics2D g2) {
-        // 1. Vẽ vòng tròn ma thuật nếu đang chờ hồi sinh (2 giây cuối)
+        // 1. Vẽ vòng tròn ma thuật (Hiệu ứng hồi sinh)
         if ((!alive && respawnCounter > 180) || (alive && shrinkCounter > 0)) {
             drawMagicCircle(g2);
         }
-        //2. Vẽ con gà nếu còn sống
+
+        // 2. Vẽ con gà nếu còn sống
         if (alive) {
             BufferedImage image = null;
+
+            // Tính toán lại khoảng cách để quyết định ảnh hiển thị
+            int diffX = (gp.player.x + gp.tileSize / 2) - (this.x + gp.tileSize / 2);
+            int diffY = (gp.player.y + gp.tileSize / 2) - (this.y + gp.tileSize / 2);
+            double distance = Math.sqrt(diffX * diffX + diffY * diffY);
+
             if (!attacking) {
+                // TRẠNG THÁI 1: Đang ngủ (Chưa thấy Player cầm trứng)
                 image = up1;
             } else {
-                switch (direction) {
-                    case "up": image = (spriteNum == 1) ? up1_egg : up2_egg; break;
-                    case "down": image = (spriteNum == 1) ? down1_egg : down2_egg; break;
-                    case "left": image = (spriteNum == 1) ? left1_egg : left2_egg; break;
-                    case "right": image = (spriteNum == 1) ? right1_egg : right2_egg; break;
+                // TRẠNG THÁI 2: Đang đuổi theo hoặc đang mổ
+                if (distance <= gp.tileSize + 5) { 
+                    // Nếu áp sát (khoảng cách cực gần): Hiện ảnh Giận dữ/Mổ
+                    image = angry; 
+                } else {
+                    // Nếu đang đuổi theo từ xa: Hiện animation chân chạy
+                    switch (direction) {
+                        case "up": image = (spriteNum == 1) ? up1_egg : up2_egg; break;
+                        case "down": image = (spriteNum == 1) ? down1_egg : down2_egg; break;
+                        case "left": image = (spriteNum == 1) ? left1_egg : left2_egg; break;
+                        case "right": image = (spriteNum == 1) ? right1_egg : right2_egg; break;
+                    }
                 }
             }
 
+            // 3. Xử lý hiệu ứng nhấp nháy khi gà bị trúng đòn (invincible)
             if (!(invincible && invincibleCounter % 10 < 5)) {
                 if (image != null) {
                     g2.drawImage(image, x, y, gp.tileSize, gp.tileSize, null);
                 }
             }
 
+            // Giảm bộ đếm hiệu ứng vòng tròn sau khi hồi sinh
             if (shrinkCounter > 0) shrinkCounter--;
-            // 3. Vẽ thanh máu
+
+            // 4. Vẽ thanh máu (HP Bar)
             if (hpBarOn) {
                 drawHPBar(g2);
             }
@@ -269,35 +323,35 @@ public class Chicken extends Entity {
         float alpha;
         int currentRadius;
         int baseRadius = 30;
+        // Nếu chưa sống lại, dùng default (vị trí hồi sinh). Nếu đã sống lại, dùng x,y hiện tại.
+        int drawX = (!alive) ? defaultX : x;
+        int drawY = (!alive) ? defaultY : y;
         //1.khử răng cưa để vòng mượt
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         // 2. Tính toán độ trong suốt (Alpha) tăng dần khi sắp hồi sinh
         if (!alive) {
-            // Hiệu ứng hiện dần khi đang chờ hồi sinh
+              // Hiệu ứng hiện dần khi đang chờ hồi sinh
             alpha = Math.min(1f, (respawnCounter - 180) / 120f);
             currentRadius = baseRadius;
-        }
-        else {
-            // Hiệu ứng thu nhỏ và mờ dần sau khi đã hồi sinh
-            alpha = shrinkCounter / 20f; 
+        } else {
+             // Hiệu ứng thu nhỏ và mờ dần sau khi đã hồi sinh
+            alpha = shrinkCounter / 20f;
             currentRadius = (int) (baseRadius * (shrinkCounter / 20f));
         }
+        if (alpha < 0) alpha = 0; // Đảm bảo alpha không âm
+
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-        // 3. HIỆU ỨNG ĐỔI MÀU LIÊN TỤC (Rainbow effect)
-        // Biến hue chạy từ 0 đến 1 dựa trên respawnCounter để đổi màu cầu vồng
-        float hue = (respawnCounter % 100) / 100f; 
+
+        float hue = (respawnCounter % 100) / 100f;
         g2.setColor(Color.getHSBColor(hue, 0.8f, 1.0f));
-        // 4. CHỈNH NÉT VẼ TO HƠN
-        // Thay số 4f bằng số lớn hơn nếu bạn muốn nét đậm hơn nữa
-        g2.setStroke(new BasicStroke(3f));
-        // 5. Tọa độ và kích thước
-        int centerX = defaultX + gp.tileSize / 2;
-        int centerY = defaultY + gp.tileSize - 5;
-        int radius = 20;//có thể tăng bán kính
-        // 6. Vẽ vòng tròn ma thuật (hình Oval dẹt tạo cảm giác 3D dưới chân)
-         g2.drawOval(centerX - radius, centerY - 10, radius * 2, 20);
-       // 7. Reset lại các thiết lập đồ họa để không ảnh hưởng đến các hình vẽ khác
-        g2.drawOval(centerX - radius, centerY - 10, radius * 2, 20);
+        g2.setStroke(new BasicStroke(3));
+        g2.drawOval(
+                drawX + gp.tileSize / 2 - currentRadius / 2,
+                drawY + gp.tileSize / 2 - currentRadius / 2,
+                currentRadius,
+                currentRadius
+        );
+
         g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
     }
 }

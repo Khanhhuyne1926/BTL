@@ -22,7 +22,9 @@ public class TileManager {
     public ArrayList<Rectangle> collisionRects = new ArrayList<>();
     public int playerStartX, playerStartY;
     
-    public Rectangle eggRect;
+    // --- THAY ĐỔI: Dùng danh sách để chứa nhiều trứng ---
+    public ArrayList<Rectangle> eggList = new ArrayList<>();
+    public Rectangle eggRect; // Giữ lại để không lỗi code cũ nếu có class khác gọi
     public boolean eggCollected = false;
 
     public Rectangle weaponRect;
@@ -53,7 +55,7 @@ public class TileManager {
             if (is != null) {
                 image = ImageIO.read(is);
             } else {
-                System.out.println("Lỗi: Không tìm thấy file tại " + path);
+                System.out.println("Loi: Khong tim thay file tai " + path);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -63,6 +65,7 @@ public class TileManager {
 
     public void resetMapObjects() {
         collisionRects.clear();
+        eggList.clear(); // Xóa danh sách trứng cũ
         playerStartX = 0;
         playerStartY = 0;
         eggRect = null;
@@ -83,15 +86,23 @@ public class TileManager {
             g2.drawImage(mazeBackground, 0, 0, gp.screenWidth, gp.screenHeight, null);
         }
 
-        // 2. Vẽ TRỨNG (Chỉ vẽ nếu chưa nhặt)
-        if (eggImage != null && eggRect != null && !eggCollected) {
-            int eggOffset = (int) (Math.sin(animationCounter * 0.05) * 10); 
-            g2.drawImage(eggImage, eggRect.x, eggRect.y + eggOffset, 64, 64, null);
+        // 2. Vẽ TRỨNG (Vẽ tất cả trứng trong danh sách)
+        if (eggImage != null) {
+            for (Rectangle r : eggList) {
+                int eggOffset = (int) (Math.sin(animationCounter * 0.05) * 10); 
+                g2.drawImage(eggImage, r.x, r.y + eggOffset, 48, 48, null);
+            }
+            
+            // Giữ logic cũ cho eggRect đơn lẻ nếu vẫn còn tồn tại
+            if (eggRect != null && !eggCollected) {
+                int eggOffset = (int) (Math.sin(animationCounter * 0.05) * 10); 
+                g2.drawImage(eggImage, eggRect.x, eggRect.y + eggOffset, 48, 48, null);
+            }
         }
 
         // 3. Vẽ VŨ KHÍ 
-        // ĐIỀU KIỆN QUAN TRỌNG: Chỉ vẽ khi eggCollected == true (đã nhặt trứng)
-        if (eggCollected && weaponImage != null && weaponRect != null && !weaponCollected) {
+        // ĐIỀU KIỆN QUAN TRỌNG: Chỉ vẽ khi đã nhặt ít nhất 1 quả trứng (hasEgg)
+        if (gp.player.hasEgg && weaponImage != null && weaponRect != null && !weaponCollected) {
             int weaponOffset = (int) (Math.sin(animationCounter * 0.06) * 8);
             g2.drawImage(weaponImage, weaponRect.x, weaponRect.y + weaponOffset, 110, 60, null);
         }
@@ -107,23 +118,36 @@ public class TileManager {
      * Kiểm tra va chạm giữa Player và các vật phẩm
      */
     public void checkItemCollisions(Rectangle playerRect) {
-        // Xử lý nhặt Trứng
+        // Xử lý nhặt Trứng từ danh sách (ArrayList)
+        for (int i = 0; i < eggList.size(); i++) {
+            Rectangle r = eggList.get(i);
+            if (playerRect.intersects(r)) {
+                eggList.remove(i); // Xóa quả trứng khỏi map
+                gp.eggsCollected++; // Tăng biến đếm trong GamePanel
+                gp.player.hasEgg = true; // Kích hoạt trạng thái có trứng
+                eggCollected = true; // Bật flag để hiện vũ khí (giữ logic cũ)
+                gp.eggSound.play();
+                System.out.println("Ban da nhat duoc Trung! Tong so: " + gp.eggsCollected);
+                i--; // Giảm chỉ số sau khi xóa
+            }
+        }
+
+        // Logic cũ cho eggRect đơn (nếu có)
         if (!eggCollected && eggRect != null && playerRect.intersects(eggRect)) {
             eggCollected = true;
+            gp.eggsCollected++;
             gp.player.hasEgg = true; 
-            // Không gán eggRect = null ngay lập tức nếu bạn muốn giữ tọa độ, 
-            // nhưng ở đây ta dùng flag eggCollected để ẩn nó đi là được
-             gp.eggSound.play(); // 🔊 THÊM DÒNG NÀY
-            System.out.println("Bạn đã nhặt được Trứng! Vũ khí đã xuất hiện.");
+            gp.eggSound.play();
+            System.out.println("Ban da nhat duoc Trung! Vu khi da xuat hien.");
         }
 
         // Xử lý nhặt Vũ khí
-        // ĐIỀU KIỆN QUAN TRỌNG: Phải nhặt trứng xong (eggCollected) mới cho nhặt vũ khí
-        if (eggCollected && !weaponCollected && weaponRect != null && playerRect.intersects(weaponRect)) {
+        // Chỉ cho nhặt khi đã có ít nhất 1 trứng
+        if (gp.player.hasEgg && !weaponCollected && weaponRect != null && playerRect.intersects(weaponRect)) {
             weaponCollected = true;
             gp.player.hasWeapon = true; 
             weaponRect = null; 
-            System.out.println("Bạn đã nhặt được Vũ khí! (Player03 đã kích hoạt)");
+            System.out.println("Ban da nhat duoc Vu khi! (Player03 da kich hoat)");
         }
     }
 
@@ -155,6 +179,9 @@ public class TileManager {
                         if (name.equalsIgnoreCase("PlayerStart")) {
                             playerStartX = x; playerStartY = y;
                         } else if (name.equalsIgnoreCase("Eggs") || name.equalsIgnoreCase("Egg")) {
+                            // THÊM VÀO DANH SÁCH (Hỗ trợ nhiều trứng)
+                            eggList.add(new Rectangle(x, y, 64, 64));
+                            // Giữ lại eggRect cho logic cũ
                             eggRect = new Rectangle(x, y, 64, 64);
                         } else if (name.equalsIgnoreCase("Weapons")) {
                             weaponRect = new Rectangle(x, y, 64, 64); 
@@ -165,9 +192,10 @@ public class TileManager {
                 }
             }
         } catch (Exception e) {
-            System.out.println("Lỗi đọc XML Tiled: " + e.getMessage());
+            System.out.println("Loi doc XML Tiled: " + e.getMessage());
         }
     }
+    
     public void loadLevelMap(int level) {
         if (level == 1) {
             currentMapPath = "src/res/maps/map_level1.tmx";

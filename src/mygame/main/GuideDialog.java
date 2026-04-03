@@ -57,7 +57,7 @@ public class GuideDialog extends JDialog {
         guideText.setContentType("text/html"); // Thiết lập chế độ đọc mã HTML
         guideText.setText(
             "<html><body style='font-family:Arial; font-size:16pt; color:#FFF0C8;'>" +
-           "1. DI CHUYỂN: Dùng " +
+           "1. Di chuyển: Dùng " +
             "<span style='background-color:#444; color:white;'><b>&nbsp;W&nbsp;</b></span> " +
             "<span style='background-color:#444; color:white;'><b>&nbsp;A&nbsp;</b></span> " +
             "<span style='background-color:#444; color:white;'><b>&nbsp;S&nbsp;</b></span> " +
@@ -66,11 +66,12 @@ public class GuideDialog extends JDialog {
             "<span style='background-color:#444; color:white;'><b>&nbsp;🡸&nbsp;</b></span> " +
             "<span style='background-color:#444; color:white;'><b>&nbsp;🡻&nbsp;</b></span> " +
             "<span style='background-color:#444; color:white;'><b>&nbsp;🡺&nbsp;</b></span>.<br><br>" +
-            "2. MỤC TIÊU: Tìm và nhặt <b>TRỨNG VÀNG</b> ở góc mê cung.<br><br>" +
-            "3. CẢNH BÁO: Lũ gà sẽ <b>THỨC TỈNH</b> và <b>ĐUỔI THEO</b> bạn ngay khi bạn nhặt được trứng!<br><br>" +
-            "4. CHIẾN ĐẤU: Sau khi có trứng, hãy tìm <b>vŨ kHÍ</b> để tự vệ (Nhấn SPACE để tấn công).<br><br>" +
-            "5. HỒI SINH: Hãy cẩn thận! Lũ gà sẽ <b>HỒI SINH</b> sau 5 giây tại vị trí cũ.<br><br>" +
-            "6. CHIẾN THẮNG: Mang trứng về <b>NHÀ</b> an toàn để thắng cuộc." +
+            "2. Mục tiêu: Tìm và nhặt <b>Trứng Vàng</b> ở góc mê cung.<br><br>" +
+            "3. Cảnh báo: Lũ gà sẽ <b>thức tỉnh</b> và <b>đuổi theo</b> bạn ngay khi bạn nhặt được trứng!<br><br>" +
+            "4. Chiến đấu: Sau khi có trứng, hãy tìm <b>vŨ kHÍ</b> để tự vệ (Nhấn SPACE để tấn công).<br><br>" +
+            "5. Hồi sinh: Hãy cẩn thận! Lũ gà sẽ <b>hồi sinh</b> sau 5 giây tại vị trí cũ.<br><br>" +
+            "6. Chiến thắng: Mang trứng về <b>nhà</b> an toàn để thắng cuộc.<br><br>" +
+            "<span style='color:#FF6464;'><b>LƯU Ý:</b></span> Ngay cả khi gà <b>đang ngủ</b>, việc chạm trực tiếp vào chúng vẫn sẽ khiến bạn <b>mất máu</b>!" +       
             "</body></html>"
         );
 

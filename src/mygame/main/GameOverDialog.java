@@ -58,12 +58,7 @@ public class GameOverDialog extends JDialog {
         title.setForeground(new Color(255, 230, 230));
         title.setBounds(40, 20, 340, 40);
         panel.add(title);
-        // SỬA
-//        JLabel nameLabel = new JLabel("Player: " + playerName, SwingConstants.CENTER);
-//        nameLabel.setFont(gameFont.deriveFont(Font.PLAIN, 18f));
-//        nameLabel.setForeground(new Color(255, 210, 210));
-//        nameLabel.setBounds(40, 70, 340, 30);
-//        panel.add(nameLabel);
+       
         
         // --- DÒNG 1: THÔNG BÁO NHIỆM VỤ (In đậm, màu Vàng rực rỡ) ---
         JLabel failTitle = new JLabel("NHIỆM VỤ LẤY TRỨNG THẤT BẠI!", SwingConstants.CENTER);

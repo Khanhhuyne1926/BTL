@@ -4,6 +4,7 @@ import java.net.URL;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
+import javax.sound.sampled.FloatControl;
 
 public class Sound {
 
@@ -20,7 +21,7 @@ public class Sound {
             soundURL = getClass().getResource(path);
 
             if (soundURL == null) {
-                System.out.println("Khong tim thấy file am thanh: " + path);
+                System.out.println("Khong tim thay file am thanh: " + path);
                 clip = null;
                 return;
             }
@@ -28,11 +29,12 @@ public class Sound {
             AudioInputStream ais = AudioSystem.getAudioInputStream(soundURL);
             clip = AudioSystem.getClip();
             clip.open(ais);
+            ais.close();
 
-            System.out.println("Da duyet am thanh: " + path);
+            System.out.println("Da load am thanh: " + path);
 
         } catch (Exception e) {
-            System.out.println("Loi chay am thanh: " + path);
+            System.out.println("Loi load am thanh: " + path);
             e.printStackTrace();
             clip = null;
         }
@@ -46,7 +48,7 @@ public class Sound {
                 clip.start();
                 System.out.println("Dang phat am thanh...");
             } else {
-                System.out.println("Clip đang null, khong phat duoc.");
+                System.out.println("Clip dang null, khong phat duoc.");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -92,5 +94,31 @@ public class Sound {
 
     public boolean isRunning() {
         return clip != null && clip.isRunning();
+    }
+
+    public void setVolume(int volumePercent) {
+        try {
+            if (clip == null) return;
+            if (!clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) return;
+
+            FloatControl gainControl =
+                    (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+
+            if (volumePercent <= 0) {
+                gainControl.setValue(gainControl.getMinimum());
+                return;
+            }
+
+            float volume = volumePercent / 100f;
+            float dB = (float) (20.0 * Math.log10(volume));
+
+            if (dB < gainControl.getMinimum()) dB = gainControl.getMinimum();
+            if (dB > gainControl.getMaximum()) dB = gainControl.getMaximum();
+
+            gainControl.setValue(dB);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
