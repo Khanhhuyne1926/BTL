@@ -49,7 +49,7 @@ public class Main {
 
         Dimension contentSize = new Dimension(WINDOWED_WIDTH, WINDOWED_HEIGHT);
         container.setPreferredSize(contentSize);
-
+  
         container.add(menuPanel, "menu");
         container.add(gamePanel, "game");
 
@@ -88,6 +88,16 @@ public class Main {
         cardLayout.show(container, "menu");
         container.revalidate();
         container.repaint();
+        
+        if (gamePanel != null) {
+            gamePanel.stopAllSounds();
+            try {
+                gamePanel.stopGameplayMusic();
+            } catch (Exception e) {
+                // bỏ qua nếu chưa có gameplayMusic
+            }
+        }
+        
         menuPanel.requestFocusInWindow();
         menuPanel.playMenuMusic();
     }
@@ -100,8 +110,12 @@ public class Main {
     }
 
     public void startGame(String playerName) {
+        if (menuPanel != null) {
+            menuPanel.stopMenuMusic();
+        }
         gamePanel.setPlayerName(playerName);
         gamePanel.startNewGame();
+        
         cardLayout.show(container, "game");
         container.revalidate();
         container.repaint();

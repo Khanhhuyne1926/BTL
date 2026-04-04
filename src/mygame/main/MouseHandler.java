@@ -4,11 +4,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 public class MouseHandler extends MouseAdapter {
-
+    private GamePanel gp;
     public int mouseX, mouseY;
     public boolean pressed = false;
     public boolean clicked = false;
 
+    public MouseHandler(GamePanel gp) {
+            this.gp = gp;
+    }   
     @Override
     public void mousePressed(MouseEvent e) {
         pressed = true;
@@ -18,10 +21,37 @@ public class MouseHandler extends MouseAdapter {
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        pressed = false;
-        clicked = true;
+        
         mouseX = e.getX();
         mouseY = e.getY();
+        pressed = false;
+        clicked = true;
+        if (gp.gameState == gp.STATE_PAUSE) {
+            handlePauseMenuClicks();
+        }
+    }
+    private void handlePauseMenuClicks() {
+        // --- LOGIC CHO GAME MUSIC ---
+        if (gp.ui.musicPlusBtn.contains(mouseX, mouseY)) {
+            gp.setGameMusicVolume(gp.gameMusicVolume + 5);
+        }
+        if (gp.ui.musicMinusBtn.contains(mouseX, mouseY)) {
+            gp.setGameMusicVolume(gp.gameMusicVolume - 5);
+        }
+        if (gp.ui.musicMuteBtn.contains(mouseX, mouseY)) {
+            gp.toggleGameMusicMute();
+        }
+
+        // --- LOGIC CHO FOOTSTEP ---
+        if (gp.ui.footPlusBtn.contains(mouseX, mouseY)) {
+            gp.setFootstepVolume(gp.footstepVolume + 5);
+        }
+        if (gp.ui.footMinusBtn.contains(mouseX, mouseY)) {
+            gp.setFootstepVolume(gp.footstepVolume - 5);
+        }
+        if (gp.ui.footMuteBtn.contains(mouseX, mouseY)) {
+            gp.toggleFootstepMute();
+        }
     }
 
     @Override

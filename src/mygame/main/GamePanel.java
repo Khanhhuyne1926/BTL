@@ -19,8 +19,7 @@ import mygame.tile.CollisionChecker;
 import mygame.ai.PathFinder;
 
 public class GamePanel extends JPanel implements Runnable {
-   
-   
+    
     public Main main;
     private boolean hasSavedProgress = false;
     private int eggEffectTick = 0;
@@ -58,15 +57,26 @@ public class GamePanel extends JPanel implements Runnable {
     public KeyHandler keyH = new KeyHandler(this);
     public CollisionChecker cChecker = new CollisionChecker(this);
     public UI ui;
-     public ConfettiManager confettiM = new ConfettiManager(this);
+    public ConfettiManager confettiM = new ConfettiManager(this);
     public PathFinder pFinder = new PathFinder(this);
-    public MouseHandler mouseH = new MouseHandler();
+    public MouseHandler mouseH = new MouseHandler(this);
 
     public Sound gameOverMusic = new Sound();
     public Sound victoryMusic = new Sound();
     public Sound eggSound = new Sound();
     public Sound weaponSound = new Sound();
     public Sound tensionMusic = new Sound();
+    public Sound gameplayMusic = new Sound();
+    public int gameMusicVolume = 70;
+    private int lastMusicVolume = 70;
+    public boolean gameMusicMuted = false;
+    
+    // BUG FIX: Biến để kiểm soát việc chuyển đổi nhạc, tránh gọi stop/play liên tục trong loop
+    private boolean isTensionPlaying = false; 
+
+    public int footstepVolume = 80;
+    private int lastFootstepVolume = 80;
+    public boolean footstepMuted = false;
 
     public int currentLevel = 1;
     Thread gameThread;
@@ -176,6 +186,49 @@ public class GamePanel extends JPanel implements Runnable {
         return mp != null && mp.isSfxMuted();
     }
 
+    // BUG FIX: Bổ sung các hàm điều khiển âm thanh bị thiếu mà UI gọi tới
+    public void setGameMusicVolume(int volume) {
+        this.gameMusicVolume = Math.max(0, Math.min(100, volume));
+        if (gameMusicVolume > 0) {
+            gameMusicMuted = false; // Tự động unmute nếu tăng âm lượng
+        }
+        refreshAudioSettings();
+    }
+
+    public void toggleGameMusicMute() {
+        this.gameMusicMuted = !this.gameMusicMuted;
+            if (gameMusicMuted) {
+            lastMusicVolume = gameMusicVolume;
+            gameMusicVolume = 0;
+        } else {
+            gameMusicVolume = (lastMusicVolume == 0) ? 70 : lastMusicVolume;
+        }
+        refreshAudioSettings();
+    }
+
+    public void setFootstepVolume(int volume) {
+        this.footstepVolume = Math.max(0, Math.min(100, volume));
+        if (footstepVolume > 0) {
+            footstepMuted = false;
+        }
+        if (player != null) player.refreshFootstepVolume();
+    }
+
+    public void toggleFootstepMute() {
+        this.footstepMuted = !this.footstepMuted;
+        if (footstepMuted) {
+            lastFootstepVolume = footstepVolume;
+            footstepVolume = 0;
+        } else {
+            footstepVolume = (lastFootstepVolume == 0) ? 80 : lastFootstepVolume;
+        }
+        if (player != null) player.refreshFootstepVolume();
+    }
+
+    public void refreshPauseAudio() {
+        refreshAudioSettings();
+    }
+
     public void refreshAudioSettings() {
         if (victoryMusic != null && victoryMusic.isLoaded()) {
             victoryMusic.setVolume(isMusicMuted() ? 0 : getMusicVolume());
@@ -183,6 +236,14 @@ public class GamePanel extends JPanel implements Runnable {
 
         if (gameOverMusic != null && gameOverMusic.isLoaded()) {
             gameOverMusic.setVolume(isMusicMuted() ? 0 : getMusicVolume());
+        }
+        
+        if (tensionMusic != null && tensionMusic.isLoaded()) {
+            tensionMusic.setVolume(gameMusicMuted ? 0 : gameMusicVolume);
+        }
+
+        if (gameplayMusic != null && gameplayMusic.isLoaded()) {
+            gameplayMusic.setVolume(gameMusicMuted ? 0 : gameMusicVolume);
         }
 
         if (eggSound != null && eggSound.isLoaded()) {
@@ -192,9 +253,14 @@ public class GamePanel extends JPanel implements Runnable {
         if (weaponSound != null && weaponSound.isLoaded()) {
             weaponSound.setVolume(isSfxMuted() ? 0 : getSfxVolume());
         }
-
+        
+        // Đoạn này lặp lại tension ở code gốc, giữ nguyên nhưng logic đã được bọc an toàn
         if (tensionMusic != null && tensionMusic.isLoaded()) {
             tensionMusic.setVolume(isMusicMuted() ? 0 : getMusicVolume());
+        }
+
+        if (player != null) {
+            player.refreshFootstepVolume();
         }
     }
 
@@ -203,6 +269,7 @@ public class GamePanel extends JPanel implements Runnable {
         hasSavedProgress = false;
         eggsCollected = 0;
         eggEffectTick = 0;
+        isTensionPlaying = false; // Reset trạng thái nhạc
 
         stopAllSounds();
         confettiM.stop();
@@ -230,7 +297,11 @@ public class GamePanel extends JPanel implements Runnable {
 
         tensionMusic.setFile("/res/audio/tension.wav");
         tensionMusic.setVolume(isMusicMuted() ? 0 : getMusicVolume());
+        
+        gameplayMusic.setFile("/res/audio/gameplay.wav");
+        gameplayMusic.setVolume(gameMusicMuted ? 0 : gameMusicVolume);
 
+        playGameplayMusic();
         tileM.resetMapObjects();
     }
 
@@ -281,6 +352,23 @@ public class GamePanel extends JPanel implements Runnable {
         if (gameOverMusic.isLoaded()) {
             gameOverMusic.setVolume(isMusicMuted() ? 0 : getMusicVolume());
             gameOverMusic.play();
+        }
+    }
+    public void playGameplayMusic() {
+        if (!gameplayMusic.isLoaded()) {
+            gameplayMusic.setFile("/res/audio/gameplay.wav");
+        }
+
+        gameplayMusic.setVolume(gameMusicMuted ? 0 : gameMusicVolume);
+
+        if (!gameplayMusic.isRunning()) {
+            gameplayMusic.loop();
+        }
+    }
+
+    public void stopGameplayMusic() {
+        if (gameplayMusic != null) {
+            gameplayMusic.stop();
         }
     }
 
@@ -484,16 +572,42 @@ public class GamePanel extends JPanel implements Runnable {
 
         if (gameState == STATE_PAUSE) {
             if (mouseH.clicked) {
+                // BUG FIX: Sửa lỗi logic nút và dọn dẹp các khối trùng lặp
                 if (ui.continueBtn.contains(mouseH.mouseX, mouseH.mouseY)) {
                     mouseH.resetClick();
                     hasSavedProgress = false;
                     gameState = (currentLevel == 2) ? STATE_LEVEL2_PLAY : STATE_PLAY;
-                    refreshAudioSettings();
+                    refreshPauseAudio();
                     return;
                 }
 
                 if (ui.menuBtn.contains(mouseH.mouseX, mouseH.mouseY)) {
+                    mouseH.resetClick();
                     saveProgressAndBackToMenu();
+                    return;
+                }
+
+                if (ui.musicMuteBtn.contains(mouseH.mouseX, mouseH.mouseY)) {
+                    mouseH.resetClick();
+                    toggleGameMusicMute();
+                    return;
+                }
+
+                if (ui.footMinusBtn.contains(mouseH.mouseX, mouseH.mouseY)) {
+                    mouseH.resetClick();
+                    setFootstepVolume(footstepVolume - 10);
+                    return;
+                }
+
+                if (ui.footPlusBtn.contains(mouseH.mouseX, mouseH.mouseY)) {
+                    mouseH.resetClick();
+                    setFootstepVolume(footstepVolume + 10);
+                    return;
+                }
+
+                if (ui.footMuteBtn.contains(mouseH.mouseX, mouseH.mouseY)) {
+                    mouseH.resetClick();
+                    toggleFootstepMute();
                     return;
                 }
             }
@@ -558,12 +672,21 @@ public class GamePanel extends JPanel implements Runnable {
             return;
         }
 
+        // BUG FIX: Chỉ gọi stop/play nhạc một lần khi trạng thái thay đổi để tránh lag
         if (player != null && player.hasEgg) {
             eggEffectTick++;
-            playTensionMusic();
+            if (!isTensionPlaying) {
+                stopGameplayMusic();
+                playTensionMusic();
+                isTensionPlaying = true;
+            }
         } else {
             eggEffectTick = 0;
-            stopTensionMusic();
+            if (isTensionPlaying) {
+                stopTensionMusic();
+                playGameplayMusic();
+                isTensionPlaying = false;
+            }
         }
 
         tileM.update();
@@ -596,6 +719,8 @@ public class GamePanel extends JPanel implements Runnable {
         if (confettiM != null) {
             confettiM.draw(g2);
         }
+        
+        g2.dispose(); // Tối ưu bộ nhớ
     }
 
     private void drawEggOverlay(Graphics2D g2) {
@@ -626,12 +751,20 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void startNewGame() {
-        clearSavedProgress();
+         clearSavedProgress();
+        stopAllSounds();
+        stopGameThread();
+
         currentLevel = 1;
         tileM.loadLevelMap(1);
+
+        keyH.resetKeys();
+        mouseH.resetClick();
+
         setupGame();
-        stopGameThread();
         startGameThread();
+
+        requestFocusInWindow();
     }
 
     public void completeLevel() {
@@ -648,6 +781,7 @@ public class GamePanel extends JPanel implements Runnable {
         currentLevel = 2;
         eggsCollected = 0;
         eggEffectTick = 0;
+        isTensionPlaying = false; 
         gameState = STATE_LEVEL2_PLAY;
 
         tileM.loadLevelMap(2);
@@ -674,6 +808,7 @@ public class GamePanel extends JPanel implements Runnable {
         eggSound.stop();
         weaponSound.stop();
         tensionMusic.stop();
+        stopGameplayMusic();
 
         if (player != null) {
             player.stopFootstepSound();
@@ -710,14 +845,26 @@ public class GamePanel extends JPanel implements Runnable {
 
     public void restartGame() {
         clearSavedProgress();
+        stopAllSounds();
         stopTensionMusic();
+        stopGameThread();
 
         currentLevel = 1;
         eggsCollected = 0;
         eggEffectTick = 0;
+        isTensionPlaying = false; 
         tileM.loadLevelMap(1);
+        
+        keyH.resetKeys();
+        mouseH.resetClick();
+        
         setupGame();
         stopGameThread();
         startGameThread();
+        
+        requestFocusInWindow();
+        keyH.resetKeys();
+        mouseH.resetClick();
+        requestFocusInWindow();
     }
 }

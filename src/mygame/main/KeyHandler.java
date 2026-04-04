@@ -74,7 +74,16 @@ public class KeyHandler implements KeyListener {
         if (code == KeyEvent.VK_SPACE) spacePressed = false;
         if (code == KeyEvent.VK_P) pPressed = false;
     }
-
+    public void resetKeys() {
+        upPressed = false;
+        downPressed = false;
+        leftPressed = false;
+        rightPressed = false;
+        escapePressed = false;
+        pPressed = false;
+        spacePressed = false;
+    }
+    
     private String getDishName(int num) {
         switch (num) {
             case 1: return "Trứng luộc lòng đào";

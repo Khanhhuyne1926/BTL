@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.io.InputStream;
 import java.awt.GradientPaint;
+import java.awt.BasicStroke;
 
 public class UI {
 
@@ -21,8 +22,17 @@ public class UI {
     public Rectangle backBtn = new Rectangle();
     public Rectangle continueBtn = new Rectangle();
     public Rectangle menuBtn = new Rectangle();
+    public Rectangle musicMinusBtn = new Rectangle();
+    public Rectangle musicPlusBtn = new Rectangle();
+    public Rectangle musicMuteBtn = new Rectangle();
+
     public Rectangle readyBtn = new Rectangle();
     public Rectangle pauseBtn = new Rectangle();
+    
+    public Rectangle footMinusBtn = new Rectangle();
+    public Rectangle footPlusBtn = new Rectangle();
+    public Rectangle footMuteBtn = new Rectangle();
+
     
     public String inputNumber = ""; // Lưu số người chơi nhập
     public boolean inputFinished = false; // Trạng thái đã nhấn Enter hay chưa
@@ -67,11 +77,27 @@ public class UI {
 
     private void updatePauseButtons() {
         int h = getUIHeight();
+        int w = getUIWidth();
         int btnW = 340;
         int btnH = 80;
 
         setCenteredButtonBounds(continueBtn, h / 2 + 20, btnW, btnH);
         setCenteredButtonBounds(menuBtn, h / 2 + 130, btnW, btnH);
+        
+        int rowW = 60;
+        int rowH = 40;
+        int centerX = w / 2;
+
+        int musicY = h / 2 - 40;
+        int footY = h / 2 + 25;
+
+        musicMinusBtn.setBounds(centerX - 140, musicY, rowW, rowH);
+        musicPlusBtn.setBounds(centerX + 80, musicY, rowW, rowH);
+        musicMuteBtn.setBounds(centerX + 155, musicY, 90, rowH);
+
+        footMinusBtn.setBounds(centerX - 140, footY, rowW, rowH);
+        footPlusBtn.setBounds(centerX + 80, footY, rowW, rowH);
+        footMuteBtn.setBounds(centerX + 155, footY, 90, rowH);
     }
 
     private void updateGameWinButtons() {
@@ -181,7 +207,7 @@ public class UI {
         g2.fillRoundRect(frameX, frameY, frameW, frameH, 30, 30);
 
         g2.setColor(new Color(150, 120, 70));
-        g2.setStroke(new java.awt.BasicStroke(4));
+        g2.setStroke(new BasicStroke(4));
         g2.drawRoundRect(frameX, frameY, frameW, frameH, 30, 30);
 
         int centerY = frameY + 25;
@@ -212,7 +238,7 @@ public class UI {
         g2.fillRoundRect(nextLevelBtn.x, nextLevelBtn.y, nextLevelBtn.width, nextLevelBtn.height, 20, 20);
 
         g2.setColor(new Color(50, 30, 0));
-        g2.setStroke(new java.awt.BasicStroke(2));
+        g2.setStroke(new BasicStroke(2));
         g2.drawRoundRect(nextLevelBtn.x, nextLevelBtn.y, nextLevelBtn.width, nextLevelBtn.height, 20, 20);
 
         g2.setFont(new Font("Arial", Font.BOLD, 18));
@@ -220,52 +246,122 @@ public class UI {
         drawCenteredTextInButton(g2, "NEXT LEVEL", nextLevelBtn);
     }
 
-    private void drawLevelCompleteScreen(Graphics2D g2) {
+    private void drawPauseScreen(Graphics2D g2) {
         int w = getUIWidth();
         int h = getUIHeight();
 
-        updateLevelCompleteButton();
-
-        g2.setColor(new Color(0, 0, 0, 180));
+        // 1. Phủ nền đen mờ toàn màn hình
+        g2.setColor(new Color(0, 0, 0, 150));
         g2.fillRect(0, 0, w, h);
 
-        g2.setFont(loadFont(32f));
+        // 2. Định nghĩa Khung Pause (Tất cả tọa độ sẽ dựa vào khung này)
+        int frameW = 550; // Chiều rộng khung
+        int frameH = 450; // Chiều cao khung
+        int frameX = (w - frameW) / 2;
+        int frameY = (h - frameH) / 2;
+
+        // Vẽ khung (Gỗ)
+        g2.setColor(new Color(85, 55, 25)); // Nâu đậm
+        g2.fillRoundRect(frameX, frameY, frameW, frameH, 35, 35);
+        g2.setColor(new Color(255, 240, 200)); // Viền kem
+        g2.setStroke(new BasicStroke(5));
+        g2.drawRoundRect(frameX, frameY, frameW, frameH, 35, 35);
+
+        // 3. Tiêu đề "PAUSED" (Căn giữa khung)
+        g2.setFont(loadFont(40f));
         g2.setColor(new Color(255, 230, 90));
-        String title = "LEVEL COMPLETE!";
-        int titleX = w / 2 - g2.getFontMetrics().stringWidth(title) / 2;
-        g2.drawString(title, titleX, h / 2 - 120);
+        String title = "PAUSED";
+        int titleX = frameX + (frameW - g2.getFontMetrics().stringWidth(title)) / 2;
+        g2.drawString(title, titleX, frameY + 60);
 
-        g2.setFont(new Font("Arial", Font.PLAIN, 16));
+        // 4. Mô tả nhỏ
+        g2.setFont(new Font("Arial", Font.PLAIN, 14));
         g2.setColor(Color.WHITE);
-        String sub = "Bạn đã hoàn thành màn chơi";
-        int subX = w / 2 - g2.getFontMetrics().stringWidth(sub) / 2;
-        g2.drawString(sub, subX, h / 2 - 70);
+        String sub = "Tùy chỉnh âm thanh hoặc quay về menu";
+        int subX = frameX + (frameW - g2.getFontMetrics().stringWidth(sub)) / 2;
+        g2.drawString(sub, subX, frameY + 90);
 
-        boolean hover = nextLevelBtn.contains(gp.mouseH.mouseX, gp.mouseH.mouseY);
-        g2.setColor(hover ? new Color(255, 210, 90) : new Color(255, 180, 50));
-        g2.fillRoundRect(nextLevelBtn.x, nextLevelBtn.y, nextLevelBtn.width, nextLevelBtn.height, 25, 25);
-
-        g2.setColor(Color.BLACK);
-        g2.drawRoundRect(nextLevelBtn.x, nextLevelBtn.y, nextLevelBtn.width, nextLevelBtn.height, 25, 25);
+        // --- PHẦN CÀI ĐẶT ÂM THANH (Căn chỉnh lại cho hết lệch) ---
+        int labelX = frameX + 50;  // Lề trái cho chữ
+        int valueX = frameX + 220; // Vị trí hiện số âm lượng
+        int controlX = frameX + 280; // Vị trí bắt đầu các nút +, -
 
         g2.setFont(loadFont(20f));
-        g2.setColor(Color.BLACK);
-        drawCenteredTextInButton(g2, "NEXT LEVEL", nextLevelBtn);
+        g2.setColor(Color.WHITE);
+
+        // Dòng GAME MUSIC
+        int musicY = frameY + 150;
+        g2.drawString("GAME MUSIC", labelX, musicY + 25);
+        g2.setColor(new Color(255, 230, 120));
+        g2.drawString(String.valueOf(gp.getMusicVolume()), valueX, musicY + 25);
+
+        musicMinusBtn.setBounds(controlX, musicY, 40, 40);
+        musicPlusBtn.setBounds(controlX + 50, musicY, 40, 40);
+        musicMuteBtn.setBounds(controlX + 110, musicY, 100, 40);
+        drawSmallButton(g2, musicMinusBtn, "-");
+        drawSmallButton(g2, musicPlusBtn, "+");
+        drawSmallButton(g2, musicMuteBtn, gp.isMusicMuted() ? "UNMUTE" : "MUTE");
+
+        // Dòng FOOTSTEP
+        g2.setColor(Color.WHITE);
+        int footY = frameY + 210;
+        g2.drawString("FOOTSTEP", labelX, footY + 25);
+        g2.setColor(new Color(255, 230, 120));
+        g2.drawString(String.valueOf(gp.footstepVolume), valueX, footY + 25);
+
+        footMinusBtn.setBounds(controlX, footY, 40, 40);
+        footPlusBtn.setBounds(controlX + 50, footY, 40, 40);
+        footMuteBtn.setBounds(controlX + 110, footY, 100, 40);
+        drawSmallButton(g2, footMinusBtn, "-");
+        drawSmallButton(g2, footPlusBtn, "+");
+        drawSmallButton(g2, footMuteBtn, gp.footstepMuted ? "UNMUTE" : "MUTE");
+
+        // --- HỆ THỐNG NÚT BẤM ĐIỀU HƯỚNG ---
+        int btnW = 300;
+        int btnH = 60;
+        int btnX = frameX + (frameW - btnW) / 2;
+
+        // Nút CONTINUE
+        continueBtn.setBounds(btnX, frameY + 290, btnW, btnH);
+        drawLargeStyledButton(g2, continueBtn, "CONTINUE");
+
+        // Nút MAIN MENU
+        menuBtn.setBounds(btnX, frameY + 365, btnW, btnH);
+        drawLargeStyledButton(g2, menuBtn, "MAIN MENU");
+    }
+
+    // Hàm vẽ nút lớn cho đồng bộ
+    private void drawLargeStyledButton(Graphics2D g2, Rectangle btn, String text) {
+        boolean hover = btn.contains(gp.mouseH.mouseX, gp.mouseH.mouseY);
+
+        // Đổ bóng cho nút
+        g2.setColor(new Color(0, 0, 0, 100));
+        g2.fillRoundRect(btn.x + 3, btn.y + 3, btn.width, btn.height, 20, 20);
+
+        // Màu nút
+        g2.setColor(hover ? new Color(255, 210, 90) : new Color(255, 180, 50));
+        g2.fillRoundRect(btn.x, btn.y, btn.width, btn.height, 20, 20);
+
+        // Viền nút
+        g2.setColor(new Color(50, 30, 0));
+        g2.setStroke(new BasicStroke(2));
+        g2.drawRoundRect(btn.x, btn.y, btn.width, btn.height, 20, 20);
+
+        // Chữ trong nút
+        g2.setFont(loadFont(22f));
+        g2.setColor(new Color(50, 30, 0));
+        drawCenteredTextInButton(g2, text, btn);
     }
 
     private Font loadFont(float size) {
         try {
             InputStream is = getClass().getResourceAsStream("/res/fonts/ThaleahFat.ttf");
-
             if (is == null) {
-                throw new RuntimeException("Khong tim thay font!");
+                return new Font("Arial", Font.BOLD, (int) size);
             }
-
             Font font = Font.createFont(Font.TRUETYPE_FONT, is);
             return font.deriveFont(size);
-
         } catch (Exception e) {
-            e.printStackTrace();
             return new Font("Arial", Font.BOLD, (int) size);
         }
     }
@@ -275,46 +371,37 @@ public class UI {
         int w = getUIWidth();
         int h = getUIHeight();
 
-        // 1. Phủ lớp nền đen mờ toàn màn hình
         g2.setColor(new Color(0, 0, 0, 190));
         g2.fillRect(0, 0, w, h);
 
-        // 2. Định nghĩa khung thông báo (giống khung Settings)
         int frameW = 620;
         int frameH = 450;
         int frameX = (w - frameW) / 2;
         int frameY = (h - frameH) / 2 - 20;
 
-        // Vẽ nền khung gỗ
         g2.setColor(new Color(85, 55, 25)); 
         g2.fillRoundRect(frameX, frameY, frameW, frameH, 35, 35);
 
-        // Vẽ viền khung màu kem
-        g2.setStroke(new java.awt.BasicStroke(5f));
+        g2.setStroke(new BasicStroke(5f));
         g2.setColor(new Color(255, 240, 200));  
         g2.drawRoundRect(frameX, frameY, frameW, frameH, 35, 35);
 
-        // 3. TIÊU ĐỀ
         g2.setFont(new Font("Arial", Font.BOLD, 42));
         g2.setColor(new Color(255, 230, 90)); 
         String title = "GAME COMPLETED";
         int titleX = w / 2 - g2.getFontMetrics().stringWidth(title) / 2;
         g2.drawString(title, titleX, frameY + 70);
 
-        // 4. LỜI NHẮN CHIẾN THẮNG
         g2.setFont(new Font("Arial", Font.BOLD, 19));
         g2.setColor(Color.WHITE);
         String sub1 = gp.player.name + " đã hoàn toàn chiến thắng trước lũ gà!";
         drawCenteredText(g2, sub1, frameX, frameW, frameY + 110);
 
-        // --- LOGIC CHIA LÀM 2 TRẠNG THÁI ---
         if (!inputFinished) {
-            // --- TRẠNG THÁI CHƯA NHẬP SỐ ---
             g2.setFont(new Font("Arial", Font.BOLD, 18));
             g2.setColor(Color.WHITE);
             drawCenteredText(g2, "Hãy nhập một con số may mắn (1-10):", frameX, frameW, frameY + 150);
 
-            // Vẽ ô nhập liệu
             int boxW = 120, boxH = 50;
             int boxX = w / 2 - boxW / 2, boxY = frameY + 170;
             g2.setColor(Color.BLACK);
@@ -322,16 +409,13 @@ public class UI {
             g2.setColor(Color.WHITE);
             g2.drawRect(boxX, boxY, boxW, boxH);
 
-            // Vẽ số đang nhập
             g2.setFont(bigFont.deriveFont(30f));
             String cursor = (System.currentTimeMillis() % 1000 < 500 ? "|" : "");
             drawCenteredText(g2, inputNumber + cursor, frameX, frameW, boxY + 35);
             
             g2.setFont(new Font("Arial", Font.PLAIN, 14));
             drawCenteredText(g2, "Nhấn ENTER để xác nhận", frameX, frameW, boxY + 75);
-
         } else {
-            // --- TRẠNG THÁI ĐÃ NHẬP XONG (HIỆN MÓN ĂN) ---
             g2.setFont(new Font("Arial", Font.ITALIC, 17));
             g2.setColor(new Color(255, 170, 50));
             drawCenteredText(g2, "Giờ thì cùng chế biến trứng thành món ngon nhé...", frameX, frameW, frameY + 150);
@@ -345,16 +429,13 @@ public class UI {
             drawCenteredText(g2, "Hãy thưởng thức thật ngon miệng sau thời gian nhặt trứng vất vả nhé!", frameX, frameW, frameY + 250);
         }
 
-        // 6. NÚT BẤM (Luôn hiển thị hoặc chỉ hiển thị khi nhập xong - tùy bạn, ở đây để luôn hiện)
         int btnW = 280, btnH = 60;
         int btnX = frameX + (frameW - btnW) / 2;
         
-        // Nút CHƠI LẠI
         int btnY1 = frameY + 280; 
         nextLevelBtn.setBounds(btnX, btnY1, btnW, btnH);
         drawStyledButton(g2, nextLevelBtn, "CHƠI LẠI");
 
-        // Nút MENU
         int btnY2 = frameY + 355; 
         backBtn.setBounds(btnX, btnY2, btnW, btnH);
         drawStyledButton(g2, backBtn, "QUAY VỀ MENU");
@@ -362,71 +443,17 @@ public class UI {
 
     
     private void drawStyledButton(Graphics2D g2, Rectangle btn, String text) {
-        // Kiểm tra di chuột
         boolean hover = btn.contains(gp.mouseH.mouseX, gp.mouseH.mouseY);
-
-        // Vẽ bóng đổ (Shadow) cho nút trông nổi khối
         g2.setColor(new Color(0, 0, 0, 70));
         g2.fillRoundRect(btn.x + 3, btn.y + 4, btn.width, btn.height, 20, 20);
-
-        // Thiết lập màu sắc giống đoạn code bạn gửi
-        // Hover: Vàng cam nhạt | Bình thường: Vàng cam đậm
         g2.setColor(hover ? new Color(255, 210, 90) : new Color(255, 180, 50));
         g2.fillRoundRect(btn.x, btn.y, btn.width, btn.height, 20, 20);
-
-        // Vẽ viền nút (Màu nâu đen)
         g2.setColor(new Color(50, 30, 0));
-        g2.setStroke(new java.awt.BasicStroke(hover ? 3 : 2)); // Viền dày hơn khi hover
+        g2.setStroke(new BasicStroke(hover ? 3 : 2)); 
         g2.drawRoundRect(btn.x, btn.y, btn.width, btn.height, 20, 20);
-
-        // Vẽ chữ Arial Bold (In đậm)
         g2.setFont(new Font("Arial", Font.BOLD, 20));
-        g2.setColor(new Color(50, 30, 0)); // Chữ màu nâu đen đồng bộ với viền
-
+        g2.setColor(new Color(50, 30, 0));
         drawCenteredTextInButton(g2, text, btn);
-    }
-    private void drawPauseScreen(Graphics2D g2) {
-        int w = getUIWidth();
-        int h = getUIHeight();
-
-        updatePauseButtons();
-
-        g2.setColor(new Color(0, 0, 0, 180));
-        g2.fillRect(0, 0, w, h);
-
-        g2.setFont(loadFont(32f));
-        g2.setColor(new Color(255, 230, 90));
-        String title = "PAUSED";
-        int titleX = w / 2 - g2.getFontMetrics().stringWidth(title) / 2;
-        g2.drawString(title, titleX, h / 2 - 120);
-
-        g2.setFont(new Font("Arial", Font.PLAIN, 16));
-        g2.setColor(Color.WHITE);
-        String sub = "Chọn tiếp tục hoặc quay về menu";
-        int subX = w / 2 - g2.getFontMetrics().stringWidth(sub) / 2;
-        g2.drawString(sub, subX, h / 2 - 75);
-
-        boolean continueHover = continueBtn.contains(gp.mouseH.mouseX, gp.mouseH.mouseY);
-        g2.setColor(continueHover ? new Color(255, 210, 90) : new Color(255, 180, 50));
-        g2.fillRoundRect(continueBtn.x, continueBtn.y, continueBtn.width, continueBtn.height, 25, 25);
-
-        g2.setColor(Color.BLACK);
-        g2.drawRoundRect(continueBtn.x, continueBtn.y, continueBtn.width, continueBtn.height, 25, 25);
-
-        g2.setFont(loadFont(20f));
-        g2.setColor(Color.BLACK);
-        drawCenteredTextInButton(g2, "CONTINUE", continueBtn);
-
-        boolean menuHover = menuBtn.contains(gp.mouseH.mouseX, gp.mouseH.mouseY);
-        g2.setColor(menuHover ? new Color(255, 210, 90) : new Color(255, 180, 50));
-        g2.fillRoundRect(menuBtn.x, menuBtn.y, menuBtn.width, menuBtn.height, 25, 25);
-
-        g2.setColor(Color.BLACK);
-        g2.drawRoundRect(menuBtn.x, menuBtn.y, menuBtn.width, menuBtn.height, 25, 25);
-
-        g2.setFont(loadFont(20f));
-        g2.setColor(Color.BLACK);
-        drawCenteredTextInButton(g2, "MAIN MENU", menuBtn);
     }
 
     private void drawCenteredText(Graphics2D g2, String text, int areaX, int areaWidth, int y) {
@@ -441,15 +468,14 @@ public class UI {
         int y = btn.y + ((btn.height - fm.getHeight()) / 2) + fm.getAscent();
         g2.drawString(text, x, y);
     }
+
     public void drawLevelTransitionScreen(Graphics2D g2) {
         int w = getUIWidth();
         int h = getUIHeight();
 
-        // 1. Nền mờ
         g2.setColor(new Color(0, 0, 0, 200));
         g2.fillRect(0, 0, w, h);
 
-        // 2. Khung gỗ (600x350)
         int frameW = 600;
         int frameH = 350;
         int frameX = (w - frameW) / 2;
@@ -457,16 +483,14 @@ public class UI {
 
         g2.setColor(new Color(85, 55, 25)); 
         g2.fillRoundRect(frameX, frameY, frameW, frameH, 35, 35);
-        g2.setStroke(new java.awt.BasicStroke(5f));
+        g2.setStroke(new BasicStroke(5f));
         g2.setColor(new Color(255, 240, 200)); 
         g2.drawRoundRect(frameX, frameY, frameW, frameH, 35, 35);
 
-        // 3. TIÊU ĐỀ
         g2.setFont(new Font("Arial", Font.BOLD, 30)); 
         g2.setColor(new Color(255, 230, 90));
         drawCenteredText(g2, "CHUẨN BỊ CHO LEVEL 2", frameX, frameW, frameY + 60);
 
-        // 4. NỘI DUNG LƯU Ý
         g2.setFont(new Font("Arial", Font.BOLD, 18));
         g2.setColor(Color.WHITE);
         drawCenteredText(g2, "LƯU Ý:", frameX, frameW, frameY + 110);
@@ -479,22 +503,24 @@ public class UI {
         g2.setColor(new Color(255, 170, 50));
         drawCenteredText(g2, "Bạn đã sẵn sàng chưa?", frameX, frameW, frameY + 220);
 
-        // 5. HAI NÚT BẤM: SẴN SÀNG & CHƠI LẠI
         int btnW = 220;
         int btnH = 55;
 
-        // Nút Sẵn sàng (Bên trái)
         readyBtn.setBounds(w / 2 - btnW - 15, frameY + 260, btnW, btnH);
         drawStyledButton(g2, readyBtn, "SẴN SÀNG");
 
-        // Nút Chơi lại (Bên phải - dùng lại nextLevelBtn hoặc backBtn tùy bạn, ở đây tôi tạo vị trí riêng)
         nextLevelBtn.setBounds(w / 2 + 15, frameY + 260, btnW, btnH);
         drawStyledButton(g2, nextLevelBtn, "CHƠI LẠI");
     }
 
-    class readyBtn {
-
-        public readyBtn() {
-        }
+    private void drawSmallButton(Graphics2D g2, Rectangle btn, String text) {
+        boolean hover = btn.contains(gp.mouseH.mouseX, gp.mouseH.mouseY);
+        g2.setColor(hover ? new Color(255, 220, 120) : new Color(255, 180, 70));
+        g2.fillRoundRect(btn.x, btn.y, btn.width, btn.height, 16, 16);
+        g2.setColor(new Color(60, 30, 10));
+        g2.drawRoundRect(btn.x, btn.y, btn.width, btn.height, 16, 16);
+        g2.setFont(loadFont(16f));
+        g2.setColor(Color.BLACK);
+        drawCenteredTextInButton(g2, text, btn);
     }
 }
